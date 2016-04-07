@@ -1,0 +1,10 @@
+E:\Projects\TestJsonWeather\TestJsonWeather\bin\Debug\TestJsonWeather.exe.config
+E:\Projects\TestJsonWeather\TestJsonWeather\bin\Debug\TestJsonWeather.exe
+E:\Projects\TestJsonWeather\TestJsonWeather\bin\Debug\TestJsonWeather.pdb
+E:\Projects\TestJsonWeather\TestJsonWeather\bin\Debug\Newtonsoft.Json.dll
+E:\Projects\TestJsonWeather\TestJsonWeather\bin\Debug\NodaTime.dll
+E:\Projects\TestJsonWeather\TestJsonWeather\bin\Debug\Newtonsoft.Json.xml
+E:\Projects\TestJsonWeather\TestJsonWeather\bin\Debug\NodaTime.xml
+E:\Projects\TestJsonWeather\TestJsonWeather\obj\Debug\TestJsonWeather.exe
+E:\Projects\TestJsonWeather\TestJsonWeather\obj\Debug\TestJsonWeather.pdb
+E:\Projects\TestJsonWeather\TestJsonWeather\obj\Debug\TestJsonWeather.csprojResolveAssemblyReference.cache
