@@ -26,18 +26,5 @@ export OPENWEATHER_API_KEY="YOUR_API_KEY"
 dotnet run --project TestJsonWeather
 ```
 
-Notes:
-- The program will show the top 5 matches for a provided city name and let you pick one to fetch current weather.
-- Default city list path is `c:\rmcs\city.list.json` on Windows if no value is provided.
-- The app uses Newtonsoft.Json for JSON parsing.
 
-## Changes made
-- Converted the project file to SDK-style (TargetFramework net6.0) so it builds with `dotnet` CLI.
-- Replaced WebClient usage with HttpClient and made the fetch method async.
-- Parameterized the city list path and API key via environment variables or command-line flags `--citylist` and `--apikey`.
-- Simplified to a single project under `TestJsonWeather`.
 
-If you'd like, I can also:
-- Add a small sample city list subset for quick testing.
-- Replace Newtonsoft.Json with System.Text.Json.
-- Add GitHub Actions workflow to build and run a smoke test.
