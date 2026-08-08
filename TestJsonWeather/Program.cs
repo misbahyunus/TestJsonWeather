@@ -4,16 +4,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
 
 namespace TestJsonWeather
 {
     class Program
     {
-        static async Task Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
             // Defaults can come from environment variables
-            string cityListPath = Environment.GetEnvironmentVariable("CITY_LIST_PATH") ?? @"c:\rmcs\city.list.json";
+            string cityListPath = Environment.GetEnvironmentVariable("CITY_LIST_PATH") ?? @"c:\\rmcs\\city.list.json";
             string apiKey = Environment.GetEnvironmentVariable("OPENWEATHER_API_KEY") ?? string.Empty;
 
             // Simple command-line parsing: --citylist <path> --apikey <key>
@@ -33,79 +32,59 @@ namespace TestJsonWeather
             {
                 Console.WriteLine($"City list file not found: {cityListPath}");
                 Console.WriteLine("Please download OpenWeather's city.list.json and set CITY_LIST_PATH or pass --citylist <path>");
-                return;
+                return 1;
             }
 
             if (string.IsNullOrWhiteSpace(apiKey))
             {
                 Console.WriteLine("OpenWeather API key not provided. Set OPENWEATHER_API_KEY or pass --apikey <key>");
-                return;
+                return 1;
             }
 
             bool loadAgain = true;
+
+            // Build index from file (streaming)
             Dictionary<string, string> cityAllList = new Dictionary<string, string>();
-
-            // Read JSON file and populate dictionary (id -> "Name (Country)")
-            using (StreamReader file = File.OpenText(cityListPath))
-            using (JsonTextReader reader = new JsonTextReader(file))
+            try
             {
-                reader.SupportMultipleContent = true;
-
-                while (true)
-                {
-                    if (!reader.Read())
-                    {
-                        break;
-                    }
-
-                    JObject o2 = (JObject)JToken.ReadFrom(reader);
-                    var id = o2["_id"]?.ToString();
-                    var name = o2["name"]?.ToString();
-                    var country = o2["country"]?.ToString();
-
-                    if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(name))
-                    {
-                        cityAllList[id] = name + " (" + country + ")";
-                    }
-                }
+                using var fs = File.OpenRead(cityListPath);
+                cityAllList = await Utilities.CityIndexBuilder.BuildIndexFromStreamAsync(fs);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to build city index: {ex.Message}");
+                return 1;
             }
 
             do
             {
                 string[] citySearchResultList = new string[5];
                 ArrayList cityCountList2 = new ArrayList();
-                int i = 0;
+                int found = 0;
 
                 Console.WriteLine("Enter city name - ");
                 string input = System.Console.ReadLine() ?? string.Empty;
-                input = input.ToLower();
+                input = input.Trim();
+                if (string.IsNullOrEmpty(input)) continue;
 
-                foreach (KeyValuePair<string, string> entry in cityAllList)
-                {
-                    if (entry.Value.ToLower().Contains(input))
-                    {
-                        cityCountList2.Add(entry.Key);
-                        if (i < 5) citySearchResultList[i] = entry.Key;
-                        i++;
-                    }
-
-                    if (i == 5) { break; }
-                }
+                var matches = Utilities.Searcher.GetTopMatches(cityAllList, input, 5);
 
                 Console.WriteLine("Top 5 matches found - ");
                 int count = 1;
 
-                for (int idx = 0; idx < cityCountList2.Count; idx++)
+                for (int idx = 0; idx < matches.Length; idx++)
                 {
-                    if (citySearchResultList[idx] != null)
+                    if (matches[idx] != null)
                     {
-                        Console.WriteLine(count + ". " + cityAllList[citySearchResultList[idx]]);
+                        Console.WriteLine(count + ". " + cityAllList[matches[idx]]);
+                        cityCountList2.Add(matches[idx]);
+                        citySearchResultList[idx] = matches[idx];
                         count++;
                     }
                 }
 
                 Console.WriteLine("Choose the one option from above. E.g: 1");
-                string selectedCity = Console.ReadLine() ?? "";
+                string selectedCity = Console.ReadLine() ?? string.Empty;
 
                 if (!int.TryParse(selectedCity, out int selection))
                 {
@@ -124,7 +103,7 @@ namespace TestJsonWeather
                         Console.WriteLine("| City:                  " + cityWeather.list[0].name);
                         Console.WriteLine("|-----------------------------------------------------------");
                         Console.WriteLine("| Country:             | " + cityWeather.list[0].sys.country);
-                        Console.WriteLine("| Current Weather:     | " + cityWeather.list[0].weather[0].description);
+                        Console.WriteLine("| Current Weather:     | " + (cityWeather.list[0].weather != null && cityWeather.list[0].weather.Length>0 ? cityWeather.list[0].weather[0].description : "N/A"));
                         Console.WriteLine("| Current Temperature: | " + Math.Round(cityWeather.list[0].main.temp, 1) + "°C");
                         Console.WriteLine("| Sunrise:             | " + FetchJson.UnixTimeStampToDateTime(cityWeather.list[0].sys.sunrise));
                         Console.WriteLine("| Sunset:              | " + FetchJson.UnixTimeStampToDateTime(cityWeather.list[0].sys.sunset));
@@ -132,15 +111,17 @@ namespace TestJsonWeather
                     }
                     else
                     {
-                        Console.WriteLine("No weather data returned from API.");
+                        Console.WriteLine("No weather data returned from API or failed to parse response.");
                     }
                 }
 
                 Console.WriteLine("Look for more cities [y/n] ? - ");
-                input = Console.ReadLine() ?? "";
-                if (input.ToLower() == "n") { loadAgain = false; }
+                input = Console.ReadLine() ?? string.Empty;
+                if (input.Trim().ToLower() == "n") { loadAgain = false; }
 
             } while (loadAgain);
+
+            return 0;
         }
     }
 }
