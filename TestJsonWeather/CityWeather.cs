@@ -1,18 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TestJsonWeather
 {
     public class CityWeather
     {
         public int cnt { get; set; }
-        public List[] list { get; set; }
+        public CityListItem[] list { get; set; }
     }
 
-    public class List
+    public class CityListItem
     {
         public Coord coord { get; set; }
         public Sys sys { get; set; }
